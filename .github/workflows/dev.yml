@@ -1,14 +1,6 @@
 name: Build and Deploy for Dev, QA, and Stable
 
 on:
-  workflow_dispatch:
-    inputs:
-      deploy_dev:
-        description: "Set to true to deploy to Dev environment"
-        required: true
-        default: false
-        type: boolean
-
   pull_request:
     types: [opened, reopened, synchronize]
     branches:
@@ -19,7 +11,7 @@ env:
 
 jobs:
   build_test_and_deploy_dev:
-    runs-on: d3d-org-runner-set
+    runs-on: ubuntu-latest
     steps:
       - name: Get Short SHA
         run: |
