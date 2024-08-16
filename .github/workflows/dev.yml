@@ -63,7 +63,6 @@ jobs:
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
           docker push kennyd3d/actions-demo:${{ env.SHA_SHORT }}
-          docker push kennyd3d/actions-demo:dev
           echo "Docker image pushed with tags dev and ${{ env.SHA_SHORT }}"
 
       - name: Deploy to k8
@@ -114,9 +113,8 @@ jobs:
 
       - name: Retag Docker Image with Tag Name
         run: |
-          SANITIZED_TAG_NAME=${{ env.SANITIZED_TAG_NAME }}
-          echo "Retagging image with sanitized tag: $SANITIZED_TAG_NAME"
-          docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${SANITIZED_TAG_NAME}
+          echo "Retagging image tag to: ${{ env.TAG_NAME }}"
+          docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${{ env.TAG_NAME }}
           docker images | grep kennyd3d/actions-demo  # List Docker images to verify retagging
 
       - name: Run regression tests
