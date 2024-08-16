@@ -5,6 +5,11 @@ on:
     types: [opened, reopened, synchronize]
     branches:
       - dev
+  push:
+    tags:
+      - "*"
+  release:
+    types: [created]
 
 env:
   ARTIFACT_NAME: hello-world
@@ -31,15 +36,89 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Run tests
+        run: |
+          echo "Fake running tests"
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: |
-            kennyd3d/actions-demo:latest
             kennyd3d/actions-demo:${{ env.SHA_SHORT }}
 
-      - name: Deploy to k8 
+      - name: Deploy to k8
         run: |
-            echo "Pretending to deploy to k8"
+          echo "Pretending to deploy to k8"
+
+  build_test_and_deploy_qa:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Get Tag Name
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          TAG_COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
+          echo "TAG_COMMIT_SHA=$TAG_COMMIT_SHA" >> $GITHUB_ENV
+          echo "SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull Docker Image for QA
+        run: |
+          docker pull kennyd3d/actions-demo:${{ env.SHA_SHORT }}\
+
+      - name: Retag Docker Image with Tag Name
+        run: |
+          docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${{ env.TAG_NAME }}
+
+      - name: Run regression tests
+        run: |
+          echo "Fake run of regression tests"
+
+      - name: Deploy to QA k8
+        run: |
+          echo "Fake deploy to QA k8 using image kennyd3d/actions-demo:${{ env.TAG_NAME }}"
+
+  build_test_and_deploy_stable:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'created'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Get Release Tag Name
+        id: get_release_tag_name
+        run: |
+          RELEASE_TAG_NAME=${{ github.event.release.tag_name }}
+          RELEASE_NAME=${{ github.event.release.name }}
+          echo "RELEASE_TAG_NAME=$RELEASE_TAG_NAME" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull Docker Image for Stable
+        run: |
+          docker pull kennyd3d/actions-demo:${{ env.TAG_NAME }}
+
+      - name: Retag Docker Image with Release Name
+        run: |
+          docker tag kennyd3d/actions-demo:${{ env.TAG_NAME }} kennyd3d/actions-demo:${{ env.RELEASE_TAG_NAME }}
+
+      - name: Deploy to Stable k8
+        run: |
+          echo "Pretending to deploy to Stable k8 using image kennyd3d/actions-demo:${{ env.RELEASE_TAG_NAME }}"
