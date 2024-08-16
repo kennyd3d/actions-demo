@@ -17,6 +17,7 @@ env:
 jobs:
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -54,7 +55,7 @@ jobs:
 
   build_test_and_deploy_qa:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -75,7 +76,7 @@ jobs:
 
       - name: Pull Docker Image for QA
         run: |
-          docker pull kennyd3d/actions-demo:${{ env.SHA_SHORT }}\
+          docker pull kennyd3d/actions-demo:${{ env.SHA_SHORT }}
 
       - name: Retag Docker Image with Tag Name
         run: |
