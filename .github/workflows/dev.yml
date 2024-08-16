@@ -149,4 +149,4 @@ jobs:
 
       - name: Deploy to Stable k8
         run: |
-          echo "Pretending to deploy to Stable k8 using image kennyd3d/actions-demo:${{ env.RELEASE_TAG_NAME }}"
+          echo "Test to deploy to Stable k8 using image kennyd3d/actions-demo:${{ env.RELEASE_TAG_NAME }}"
