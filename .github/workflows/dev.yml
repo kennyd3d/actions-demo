@@ -14,7 +14,6 @@ on:
 env:
   ARTIFACT_NAME: hello-world
 
-
 jobs:
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
@@ -65,9 +64,25 @@ jobs:
       - name: Get Tag Name
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
+          # Validate and sanitize the tag name
+          if [[ ! "$TAG_NAME" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
+            echo "Invalid tag name: $TAG_NAME. Tag names must be lowercase and can include dashes, dots, or underscores."
+            exit 1
+          fi
+          # Ensure tag name is a valid Docker tag
+          if [ ${#TAG_NAME} -gt 128 ]; then
+            echo "Tag name is too long. Must be less than 128 characters."
+            exit 1
+          fi
           TAG_COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
           echo "TAG_COMMIT_SHA=$TAG_COMMIT_SHA" >> $GITHUB_ENV
           echo "SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)" >> $GITHUB_ENV
+
+      - name: Print Tag Name and SHA
+        run: |
+          echo "Tag Name: ${{ env.TAG_NAME }}"
+          echo "Full SHA: ${{ env.TAG_COMMIT_SHA }}"
+          echo "Short SHA: ${{ env.SHA_SHORT }}"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -82,7 +97,9 @@ jobs:
 
       - name: Retag Docker Image with Tag Name
         run: |
-          docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${{ env.TAG_NAME }}
+          # Sanitize tag name for Docker
+          SANITIZED_TAG_NAME=$(echo "${{ env.TAG_NAME }}" | sed 's/[^a-z0-9._-]/_/g')
+          docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${SANITIZED_TAG_NAME}
 
       - name: Run regression tests
         run: |
