@@ -98,9 +98,10 @@ jobs:
 
       - name: Retag Docker Image with Tag Name
         run: |
-          # Sanitize tag name for Docker
-          SANITIZED_TAG_NAME=$(echo "${{ env.TAG_NAME }}" | sed 's/[^a-z0-9._-]/_/g')
+          SANITIZED_TAG_NAME=${{ env.SANITIZED_TAG_NAME }}
+          echo "Retagging image with sanitized tag: $SANITIZED_TAG_NAME"
           docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${SANITIZED_TAG_NAME}
+          docker images | grep kennyd3d/actions-demo  # List Docker images to verify retagging
 
       - name: Run regression tests
         run: |
