@@ -5,15 +5,16 @@ on:
     types: [opened, reopened, synchronize]
     branches:
       - dev
-  
+
   pull_request_target:
     types: [closed]
     branches:
       - dev
-  
+
   push:
     tags:
       - "*"
+
   release:
     types: [created]
 
@@ -23,7 +24,9 @@ env:
 jobs:
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.base_ref == 'dev'
+    if: |
+      github.event_name == 'pull_request' && github.base_ref == 'dev' ||
+      (github.event_name == 'pull_request_target' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
