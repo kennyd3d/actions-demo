@@ -117,6 +117,11 @@ jobs:
           docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${{ env.TAG_NAME }}
           docker images | grep kennyd3d/actions-demo  # List Docker images to verify retagging
 
+      - name: Push Retagged Docker Image
+        run: |
+          echo "Pushing the retagged image to Docker Hub"
+          docker push kennyd3d/actions-demo:${{ env.TAG_NAME }}
+
       - name: Run regression tests
         run: |
           echo "Fake run of regression tests"
