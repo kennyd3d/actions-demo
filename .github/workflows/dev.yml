@@ -140,7 +140,7 @@ jobs:
       - name: Get Release Tag Name
         run: |
           echo "RELEASE_TAG_NAME=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
-          echo "RELEASE_NAME=${{ github.event.release.name }} >> $GITHUB_ENV
+          echo "RELEASE_NAME=${{ github.event.release.name }}" >> $GITHUB_ENV
 
       - name: Print Release Tag Name and Release Name
         run: |
