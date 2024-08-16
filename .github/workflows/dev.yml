@@ -14,7 +14,7 @@ on:
 env:
   ARTIFACT_NAME: hello-world
 
-  
+
 jobs:
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
@@ -55,6 +55,7 @@ jobs:
           echo "Pretending to deploy to k8"
 
   build_test_and_deploy_qa:
+    needs: build_test_and_deploy_dev
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
