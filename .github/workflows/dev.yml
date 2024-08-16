@@ -41,13 +41,21 @@ jobs:
         run: |
           echo "Fake running some tests"
 
-      - name: Build and Push Docker Image
+      - name: Build Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: false
           tags: |
             kennyd3d/actions-demo:${{ env.SHA_SHORT }}
+            kennyd3d/actions-demo:dev
+
+      - name: Push Docker Image if Merged
+        if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
+        run: |
+          docker push kennyd3d/actions-demo:${{ env.SHA_SHORT }}
+          docker push kennyd3d/actions-demo:dev
+          echo "Docker image pushed with tags dev and ${{ env.SHA_SHORT }}"
 
       - name: Deploy to k8
         run: |
