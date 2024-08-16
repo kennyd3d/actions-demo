@@ -5,6 +5,12 @@ on:
     types: [opened, reopened, synchronize]
     branches:
       - dev
+  
+  pull_request_target:
+    types: [closed]
+    branches:
+      - dev
+  
   push:
     tags:
       - "*"
