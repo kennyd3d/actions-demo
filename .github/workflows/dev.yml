@@ -148,7 +148,19 @@ jobs:
 
       - name: Pull Docker Image for Stable
         run: |
-          docker pull docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }}
+          docker pull ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }}
+
+      - name: Retag Docker Image with Release Name
+        run: |
+          echo "Retagging image tag to: ${{ env.RELEASE_NAME }}" 
+          docker tag ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }} ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
+          docker images # List Docker images to verify retagging
+
+      - name: Push Retagged Docker Image
+        run: |
+          echo "Pushing the retagged image to Docker Hub"
+          docker push ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
+          docker images # List Docker images to verify retagging
 
       - name: Deploy to Stable k8
         run: |
