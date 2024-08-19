@@ -146,6 +146,10 @@ jobs:
           echo "Release Tag Name: ${{ env.RELEASE_TAG_NAME }}"
           echo "Release Name: ${{ env.RELEASE_NAME }}"
 
+      - name: Pull Docker Image for Stable
+        run: |
+          docker pull docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }}
+
       - name: Deploy to Stable k8
         run: |
-          echo "Test to deploy to Stable k8 using image kennyd3d/actions-demo:${{ env.RELEASE_TAG_NAME }}"
+          echo "Test to deploy to Stable k8 using image kennyd3d/actions-demo:${{ env.RELEASE_NAME }}"
