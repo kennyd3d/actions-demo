@@ -56,7 +56,7 @@ jobs:
           context: .
           push: false
           tags: |
-            ${{ env.SHA_SHORT }}
+            kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
 
       - name: Push Docker Image if merged
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
