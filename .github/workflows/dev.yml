@@ -19,7 +19,7 @@ on:
     types: [created]
 
 env:
-  ARTIFACT_NAME: hello-world
+  ARTIFACT_NAME: actions-demo
 
 jobs:
   build_test_and_deploy_dev:
@@ -56,13 +56,13 @@ jobs:
           context: .
           push: false
           tags: |
-            kennyd3d/actions-demo:${{ env.SHA_SHORT }}
+            ${{ env.SHA_SHORT }}
 
       - name: Push Docker Image if Merged
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
-          docker push kennyd3d/actions-demo:${{ env.SHA_SHORT }}
-          echo "Docker image pushed with tags dev and ${{ env.SHA_SHORT }}"
+          docker push ${{ env.SHA_SHORT }}
+          echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
 
       - name: Deploy to k8
         run: |
@@ -108,18 +108,18 @@ jobs:
 
       - name: Pull Docker Image for QA
         run: |
-          docker pull kennyd3d/actions-demo:${{ env.SHA_SHORT }}
+          docker pull ${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
 
       - name: Retag Docker Image with Tag Name
         run: |
           echo "Retagging image tag to: ${{ env.TAG_NAME }}"
-          docker tag kennyd3d/actions-demo:${{ env.SHA_SHORT }} kennyd3d/actions-demo:${{ env.TAG_NAME }}
-          docker images | grep kennyd3d/actions-demo  # List Docker images to verify retagging
+          docker tag ${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} ${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
+          docker images | grep ${{ env.ARTIFACT_NAME }}  # List Docker images to verify retagging
 
       - name: Push Retagged Docker Image
         run: |
           echo "Pushing the retagged image to Docker Hub"
-          docker push kennyd3d/actions-demo:${{ env.TAG_NAME }}
+          docker push ${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
 
       - name: Run regression tests
         run: |
@@ -127,7 +127,7 @@ jobs:
 
       - name: Deploy to QA k8
         run: |
-          echo "Fake deploy to QA k8 using image kennyd3d/actions-demo:${{ env.TAG_NAME }}"
+          echo "Fake deploy to QA k8 using image ${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}"
 
   build_test_and_deploy_stable:
     runs-on: ubuntu-latest
@@ -164,4 +164,4 @@ jobs:
 
       - name: Deploy to Stable k8
         run: |
-          echo "Test to deploy to Stable k8 using image kennyd3d/actions-demo:${{ env.RELEASE_NAME }}"
+          echo "Test to deploy to Stable k8 using image ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}"
