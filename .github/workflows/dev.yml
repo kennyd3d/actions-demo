@@ -108,18 +108,18 @@ jobs:
 
       - name: Pull Docker Image for QA
         run: |
-          docker pull ${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
+          docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
 
       - name: Retag Docker Image with Tag Name
         run: |
           echo "Retagging image tag to: ${{ env.TAG_NAME }}"
-          docker tag ${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} ${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
-          docker images | grep ${{ env.ARTIFACT_NAME }}  # List Docker images to verify retagging
+          docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
+          docker images | grep kennyd3d/${{ env.ARTIFACT_NAME }}  # List Docker images to verify retagging
 
       - name: Push Retagged Docker Image
         run: |
           echo "Pushing the retagged image to Docker Hub"
-          docker push ${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
+          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
 
       - name: Run regression tests
         run: |
@@ -127,7 +127,7 @@ jobs:
 
       - name: Deploy to QA k8
         run: |
-          echo "Fake deploy to QA k8 using image ${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}"
+          echo "Fake deploy to QA k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}"
 
   build_test_and_deploy_stable:
     runs-on: ubuntu-latest
@@ -148,20 +148,20 @@ jobs:
 
       - name: Pull Docker Image for Stable
         run: |
-          docker pull ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }}
+          docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }}
 
       - name: Retag Docker Image with Release Name
         run: |
           echo "Retagging image tag to: ${{ env.RELEASE_NAME }}" 
-          docker tag ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }} ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
+          docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
           docker images # List Docker images to verify retagging
 
       - name: Push Retagged Docker Image
         run: |
           echo "Pushing the retagged image to Docker Hub"
-          docker push ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
+          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
           docker images # List Docker images to verify retagging
 
       - name: Deploy to Stable k8
         run: |
-          echo "Test to deploy to Stable k8 using image ${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}"
+          echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}"
