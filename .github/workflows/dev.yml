@@ -61,7 +61,7 @@ jobs:
       - name: Push Docker Image if Merged
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
-          docker push ${{ env.SHA_SHORT }}
+          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
           echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
 
       - name: Deploy to k8
