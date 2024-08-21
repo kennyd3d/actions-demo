@@ -48,7 +48,7 @@ jobs:
 
       - name: Run tests
         run: |
-          echo "Fake running some tests"
+          echo "Fake running some test"
 
       - name: Build Docker Image
         uses: docker/build-push-action@v6
