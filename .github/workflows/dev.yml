@@ -94,12 +94,13 @@ jobs:
           TAG_NAME=${GITHUB_REF#refs/tags/}
           SHA_SHORT=$(git rev-parse --short=7 ${TAG_NAME})
           echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
+          echo "$SHA_SHORT"
 
-          if ! docker pull kennyd3d/actions-demo:${SHA_SHORT}; then
+          if ! docker pull kennyd3d/actions-demo:$SHA_SHORT; then
             echo "❌ Failed to pull Docker image kennyd3d/actions-demo:${SHA_SHORT}" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-
+          
       - name: Retag and push Docker Image with Release Name
         run: | 
           echo \"Retagging image tag to: ${{ github.event.release.name }}"
