@@ -82,10 +82,15 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Get 7-digit SHA from the release
+        run: |
+          echo "Commit SHA: ${GITHUB_SHA::7}"
+          echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Check if release tag's SHA is in artifactory
         run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          TAG_NAME=${GITHUB_REF#refs/tags/}
           SHA_SHORT=$(git rev-parse --short=7 ${TAG_NAME})
           echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
           if ! docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}; then
