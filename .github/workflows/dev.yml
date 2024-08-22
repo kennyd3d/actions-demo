@@ -6,6 +6,7 @@ on:
         required: false
         type: string
         description: "The name of the release you want to deploy to stable."
+
   pull_request:
     types: [opened, reopened, synchronize]
     branches:
