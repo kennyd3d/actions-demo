@@ -31,19 +31,9 @@ if [[ "${current_options_array[*]}" == "${output_array[*]}" ]]; then
 else
     echo "Values in YAML file are not equal to values in array. Updating YAML file."
     
-    # Initialize an empty options string
-    options_string=""
-
-    # Build the options string, using dashes for YAML list format
+    # Build the YAML list with correct formatting
+    yq eval '.on.workflow_dispatch.inputs.RELEASE.options = []' -i $SOURCE_YAML_FILE
     for option in "${output_array[@]}"; do
-        options_string+="- $option\n"
+        yq eval ".on.workflow_dispatch.inputs.RELEASE.options += \"$option\"" -i $SOURCE_YAML_FILE
     done
-
-    # Remove the trailing newline
-    options_string="${options_string%\\n}"
-    echo "opts: $options_string"
-
-    yq eval ".on.workflow_dispatch.inputs.RELEASE.options = \"$options_string\"" -i $SOURCE_YAML_FILE
-
-
 fi

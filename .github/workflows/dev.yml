@@ -1,26 +1,34 @@
 name: Build and Deploy for Dev, QA, and Stable
+
 on:
   workflow_dispatch:
     inputs:
       RELEASE:
         required: false
         type: choice
-        options: '[0.0.8-rc, 0.0.6-rc, 0.0.5-rc, 0.0.4-rc]'
+        options: [0.0.8-rc, 0.0.6-rc, 0.0.5-rc, 0.0.4-rc]
+
+
   pull_request:
     types: [opened, reopened, synchronize]
     branches:
       - dev
+
   pull_request_target:
     types: [closed]
     branches:
       - dev
+
   push:
     tags:
       - "*"
+
   release:
     types: [created]
+
 env:
   ARTIFACT_NAME: actions-demo
+
 jobs:
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
@@ -30,21 +38,26 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Get Short SHA
         run: |
           echo "SHA_SHORT=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
       - name: Print Short SHA
         run: |
           echo "Short SHA: ${{ env.SHA_SHORT }}"
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Run tests
         run: |
           echo "Fake running some test"
+
       - name: Build Docker Image
         uses: docker/build-push-action@v6
         with:
@@ -52,21 +65,25 @@ jobs:
           push: false
           tags: |
             kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
+
       - name: Push Docker Image if merged
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
           echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
+
       - name: Deploy to k8
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
           echo "Pretending to deploy to k8"
+
   build_test_and_deploy_qa:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Get Tag Name
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
@@ -84,65 +101,83 @@ jobs:
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           echo "TAG_COMMIT_SHA=$TAG_COMMIT_SHA" >> $GITHUB_ENV
           echo "SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)" >> $GITHUB_ENV
+
       - name: Print Tag Name and SHA
         run: |
           echo "Tag Name: ${{ env.TAG_NAME }}"
           echo "Full SHA: ${{ env.TAG_COMMIT_SHA }}"
           echo "Short SHA: ${{ env.SHA_SHORT }}"
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Pull Docker Image for QA
         run: |
           docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
+
       - name: Retag Docker Image with Tag Name
         run: |
           echo "Retagging image tag to: ${{ env.TAG_NAME }}"
           docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
           docker images | grep kennyd3d/${{ env.ARTIFACT_NAME }}  # List Docker images to verify retagging
+
       - name: Push Retagged Docker Image
         run: |
           echo "Pushing the retagged image to Docker Hub"
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}
+
       - name: Run regression tests
         run: |
           echo "Fake run of regression testing"
+
       - name: Deploy to QA k8
         run: |
           echo "Fake deploy to QA k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}"
+
   build_test_and_deploy_stable:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'created'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Get Release Tag Name
         run: |
           echo "RELEASE_TAG_NAME=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
           echo "RELEASE_NAME=${{ github.event.release.name }}" >> $GITHUB_ENV
+
       - name: Print Release Tag Name and Release Name
         run: |
           echo "Release Tag Name: ${{ env.RELEASE_TAG_NAME }}"
           echo "Release Name: ${{ env.RELEASE_NAME }}"
+
       - name: Pull Docker Image for Stable
         run: |
           docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }}
+
       - name: Retag Docker Image with Release Name
-        run: "echo \"Retagging image tag to: ${{ env.RELEASE_NAME }}\" \ndocker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}\ndocker images # List Docker images to verify retagging\n"
+        run: |
+          echo "Retagging image tag to: ${{ env.RELEASE_NAME }}" 
+          docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_TAG_NAME }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
+          docker images # List Docker images to verify retagging
+
       - name: Push Retagged Docker Image
         run: |
           echo "Pushing the retagged image to Docker Hub"
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
           docker images # List Docker images to verify retagging
+
       - name: Deploy to Stable k8
         run: |
           echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}"
