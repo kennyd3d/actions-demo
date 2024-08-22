@@ -5,7 +5,13 @@ on:
       RELEASE:
         required: false
         type: choice
-        options: '[0.0.8-rc, 0.0.6-rc, 0.0.5-rc, 0.0.4-rc]'
+        options: '- 0.0.8-rc
+
+          - 0.0.6-rc
+
+          - 0.0.5-rc
+
+          - 0.0.4-rc'
   pull_request:
     types: [opened, reopened, synchronize]
     branches:
