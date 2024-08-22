@@ -62,11 +62,11 @@ jobs:
         run: |
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
           echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
+          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory" >> $GITHUB_STEP_SUMMARY
 
       - name: Deploy to k8
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
-          echo "# 🎊 Successfully pushed kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} to Artifactory" >> $GITHUB_STEP_SUMMARY
           echo "Pretending to deploy to k8"
 
   # Build test and deploy to qa namespace when a release tag is created
@@ -97,7 +97,6 @@ jobs:
           if ! docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}; then
             echo "❌ Failed to pull Docker image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}" >> $GITHUB_STEP_SUMMARY
             exit 1
-          else
 
       - name: Retag and push Docker Image with Release Name
         run: | 
