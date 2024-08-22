@@ -33,11 +33,11 @@ jobs:
       - name: Run Populator
         run: bash ./.github/workflows/populate-option-value.sh
 
-      # - name: Commit and Push Changes
-      #   uses: EndBug/add-and-commit@v9
-      #   with:
-      #     author_name: ${{ github.actor }}
-      #     author_email: ${{ github.actor }}@divergent3d.com
-      #     message: "✅ Populated option values"
-      #     push: true
-      #     add: '.github/workflows/dev.yml'
+      - name: Commit and Push Changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: ${{ github.actor }}
+          author_email: ${{ github.actor }}@divergent3d.com
+          message: "✅ Populated option values"
+          push: true
+          add: '.github/workflows/dev.yml'
