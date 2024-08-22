@@ -1,19 +1,18 @@
 name: 'Populate option values'
 
-
 on:
   push:
     branches:
-      - 'main'
-
-
+      - 'dev'
+      - '**' # Triggers on pushes to all branches
+      
 jobs:
   eslint:
     name: Populate Option Values
     runs-on: ubuntu-latest
     steps:
       - name: Check out Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.JENKINS_GITHUB_TOKEN }}
 
@@ -27,21 +26,18 @@ jobs:
             grep '"name":' | \
             sed -E 's/.*"name": "(.*)".*/\1/' | \
             awk '{print $1}'))
-            echo "RELEASE_NAMES=${OPTIONS}" >> $GITHUB_ENV
+            echo "${OPTIONS[@]}"
+
+            echo "RELEASE_NAMES=${OPTIONS[@]}" >> $GITHUB_ENV
 
       - name: Run Populator
-        run: ./.github/workflows/populate-option-value.sh
+        run: bash ./.github/workflows/populate-option-value.sh
 
-
-      - name: Commit Changes
-        run: |
-          if git diff --quiet; then
-            echo "ℹ️ No new Component names to update"
-          else
-            git config --global user.email "${{ github.actor }}@divergent3d.com }}"
-            git config --global user.name "${{ github.actor }}"
-            git status
-            git add .github/workflows/dev.yml
-            git commit -m "✅ Populated option values"
-            git push
-          fi
+      - name: Commit and Push Changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: ${{ github.actor }}
+          author_email: ${{ github.actor }}@divergent3d.com
+          message: "✅ Populated option values"
+          push: true
+          add: '.github/workflows/dev.yml'
