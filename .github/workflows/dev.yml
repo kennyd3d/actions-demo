@@ -95,8 +95,8 @@ jobs:
           SHA_SHORT=$(git rev-parse --short=7 ${TAG_NAME})
           echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
 
-          if ! docker pull ***/actions-demo:${SHA_SHORT}; then
-            echo "❌ Failed to pull Docker image ***/actions-demo:${SHA_SHORT}" >> $GITHUB_STEP_SUMMARY
+          if ! docker pull kennyd3d/actions-demo:${SHA_SHORT}; then
+            echo "❌ Failed to pull Docker image kennyd3d/actions-demo:${SHA_SHORT}" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
