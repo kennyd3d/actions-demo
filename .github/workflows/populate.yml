@@ -32,8 +32,15 @@ jobs:
 
       - name: Run Populator
         run: bash ./.github/workflows/populate-option-value.sh
+      
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          git diff --quiet .github/workflows/dev.yml
+          echo "::set-output name=changed::$?"
 
       - name: Commit and Push Changes
+        if: steps.check_changes.outputs.changed == '1'
         uses: EndBug/add-and-commit@v9
         with:
           author_name: ${{ github.actor }}
