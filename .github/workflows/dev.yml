@@ -84,8 +84,8 @@ jobs:
 
       - name: Check if release tag's SHA is in artifactory
         run: |
-          TAG_COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          TAG_COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
           echo "TAG_COMMIT_SHA=$TAG_COMMIT_SHA" >> $GITHUB_ENV
           echo "SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)" >> $GITHUB_ENV
           if ! docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}; then
