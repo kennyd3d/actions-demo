@@ -59,9 +59,7 @@ jobs:
       - name: Push Docker Image if merged
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
-          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
-          echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
-          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory" >> $GITHUB_STEP_SUMMARY    
+          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}          
 
       - name: Deploy to k8
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
@@ -86,9 +84,8 @@ jobs:
 
       - name: Preparing for deployment
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          SHA_SHORT=$(git rev-parse --short=7 ${TAG_NAME})
-          echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
+          echo "Commit SHA: ${GITHUB_SHA::7}"
+          echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "IMAGE_DEV=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}" >> $GITHUB_ENV
           echo "IMAGE_QA=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}" >> $GITHUB_ENV
 
@@ -106,7 +103,8 @@ jobs:
         if: failure()
         run: |
           echo "# ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔" >> $GITHUB_STEP_SUMMARY
-          echo "DEV deployment: ${{ env.IMAGE_DEV }}| QA Deployment: ${{ env.IMAGE_QA }}" >> $GITHUB_STEP_SUMMARY
+          echo "## DEV deployment: ${{ env.IMAGE_DEV }}" >> $GITHUB_STEP_SUMMARY
+          echo "## QA Deployment: ${{ env.IMAGE_QA }}" >> $GITHUB_STEP_SUMMARY
       
       - name: Run success message on successful deployment
         if: success()
