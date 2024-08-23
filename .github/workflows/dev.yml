@@ -96,11 +96,6 @@ jobs:
           echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
           echo "$SHA_SHORT"
 
-          if ! docker pull kennyd3d/actions-demo:$SHA_SHORT; then
-            echo "❌ Failed to pull Docker image kennyd3d/actions-demo:${SHA_SHORT}" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-
       - name: Retag and push Docker Image with Release Name
         run: |
           echo "Retagging image tag to: ${{ github.event.release.name }}"
@@ -116,6 +111,11 @@ jobs:
       - name: Deploy to Stable k8
         run: |
           echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}"
+
+      - name: Give possible failure hint
+        if: failure()
+        run: |
+          "❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔" >> $GITHUB_STEP_SUMMARY
 
   # Manually deploy the release given the release name
   deploy_stable:
