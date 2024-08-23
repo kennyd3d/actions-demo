@@ -100,12 +100,12 @@ jobs:
             echo "❌ Failed to pull Docker image kennyd3d/actions-demo:${SHA_SHORT}" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-          
+
       - name: Retag and push Docker Image with Release Name
         run: | 
           echo \"Retagging image tag to: ${{ github.event.release.name }}"
           docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHORT_SHA }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
-          docker images # List Docker images to verify retagging\n"
+          docker images
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
 
       - name: Deploy to Stable k8
