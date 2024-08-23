@@ -61,15 +61,13 @@ jobs:
         run: |
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
           echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
-          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory\n" >> $GITHUB_STEP_SUMMARY
-          echo "## ⚠️ Check that you are using the tag ${{ env.SHA_SHORT }} when/if creating a new tag for QA deployment ⚠️\n" >> $GITHUB_STEP_SUMMARY
-    
+          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory" >> $GITHUB_STEP_SUMMARY    
 
       - name: Deploy to k8
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
           echo "Pretending to deploy to k8"
-          echo "# Dev Deployment was a Success ✅" >> $GITHUB_STEP_SUMMARY
+          echo "## Dev Deployment was a Success ✅" >> $GITHUB_STEP_SUMMARY
 
   # Build test and deploy to qa namespace when a release tag is created
   build_test_and_deploy_qa:
@@ -86,46 +84,34 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Get 7-digit SHA from the release
-        run: |
-          echo "Commit SHA: ${GITHUB_SHA::7}"
-          echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
-      - name: Check if release tag's SHA is in artifactory
+      - name: Preparing for deployment
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
           SHA_SHORT=$(git rev-parse --short=7 ${TAG_NAME})
           echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_ENV
-          echo "$SHA_SHORT"
+          echo "IMAGE_DEV=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}" >> $GITHUB_ENV
+          echo "IMAGE_QA=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}" >> $GITHUB_ENV
 
       - name: Retag and push Docker Image with Release Name
         run: |
-          docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
-          echo "Retagging image tag to: ${{ github.event.release.name }}"
-          echo "Artifact Name: ${{ env.ARTIFACT_NAME }}"
-          echo "Short SHA: ${{ env.SHA_SHORT }}"
-          echo "Listing Docker images..."
-          docker images
-          echo "Tagging image..."
-          docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
-          echo "Listing Docker images..."
-          docker images
-          echo "Pushing image..."
-          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
+          docker pull ${{ env.IMAGE_DEV }}
+          docker tag ${{ env.IMAGE_DEV }} ${{ env.IMAGE_QA }}
+          docker push ${{ env.IMAGE_QA }}
 
       - name: Deploy to Stable k8
         run: |
-          echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}"
+          echo "Test to deploy to Stable k8 using image ${{ env.IMAGE_QA }}"
 
       - name: Give possible failure hint
         if: failure()
         run: |
           echo "# ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔" >> $GITHUB_STEP_SUMMARY
+          echo "DEV deployment: ${{ env.IMAGE_DEV }}| QA Deployment: ${{ env.IMAGE_QA }}" >> $GITHUB_STEP_SUMMARY
       
       - name: Run success message on successful deployment
         if: success()
         run: |
-          echo "# 🎊 Successfully deployed ${{ github.event.release.name }} to QA ✅" >> $GITHUB_STEP_SUMMARY
+          echo "# 🎊 Successfully deployed ${{ env.IMAGE_QA }} to QA ✅" >> $GITHUB_STEP_SUMMARY
 
   # Manually deploy the release given the release name
   deploy_stable:
@@ -141,24 +127,22 @@ jobs:
 
       - name: Check if release exists in remote repo
         run: |
-          IMAGE=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
-          if docker manifest inspect $IMAGE > /dev/null 2>&1; then
-            echo '# 🎊 Successfully Deployed to Stable' >> $GITHUB_STEP_SUMMARY
-          else
-            echo '# ❌ Failed Stable Deployment: $IMAGE not found in artifactory' >> $GITHUB_STEP_SUMMARY
+          echo "IMAGE_STABLE=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.inputs.INPUT_TAG }}" >> $GITHUB_ENV
+          if ! docker manifest inspect kennyd3d/actions-demo:0.0.28-rc > /dev/null 2>&1; then
+            echo '# ❌ Failed Stable Deployment: ${{ env.IMAGE_STABLE }} not found in artifactory' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
         
-      - name: Deploy to Stable k8
+      - name: Deploy release to stable namespace 
         run: |
-          echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}"
+          echo "Test to deploy to Stable k8 using image ${{ env.IMAGE_STABLE }}"
 
       - name: Give possible failure hint
         if: failure()
         run: |
-          echo "## Stable Failed to Deploy: Did you type the correct release name? 🤔" >> $GITHUB_STEP_SUMMARY
+          echo "## Stable Failed to Deploy ${{ env.IMAGE_STABLE }}: Did you type the correct release name? 🤔" >> $GITHUB_STEP_SUMMARY
       
       - name: Run success message on successful deployment
         if: success()
         run: |
-          echo "# 🎊 Successfully deployed ${{ github.event.release.name }} to Stable ✅" >> $GITHUB_STEP_SUMMARY
+          echo "# 🎊 Successfully deployed ${{ env.IMAGE_STABLE }} to Stable ✅" >> $GITHUB_STEP_SUMMARY
