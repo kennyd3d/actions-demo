@@ -106,11 +106,11 @@ jobs:
           echo \"Retagging image tag to: ${{ github.event.release.name }}"
           docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHORT_SHA }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
           docker images
-          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}
+          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name}}
 
       - name: Deploy to Stable k8
         run: |
-          echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.RELEASE_NAME }}"
+          echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}"
 
   # Manually deploy the release given the release name
   deploy_stable:
