@@ -11,13 +11,12 @@ on:
     types: [opened, reopened, synchronize]
     branches:
       - dev
+
   pull_request_target:
     types: [closed]
     branches:
       - dev
-  push:
-    tags:
-      - "*"
+
   release:
     types: [created]
 
@@ -98,6 +97,7 @@ jobs:
 
       - name: Retag and push Docker Image with Release Name
         run: |
+          docker pull kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
           echo "Retagging image tag to: ${{ github.event.release.name }}"
           echo "Artifact Name: ${{ env.ARTIFACT_NAME }}"
           echo "Short SHA: ${{ env.SHA_SHORT }}"
@@ -117,7 +117,7 @@ jobs:
       - name: Give possible failure hint
         if: failure()
         run: |
-          "echo # ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔\n" >> $GITHUB_STEP_SUMMARY
+          echo "# ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔\n" >> $GITHUB_STEP_SUMMARY
       
       - name: Run success message on successful deployment
         if: success()
