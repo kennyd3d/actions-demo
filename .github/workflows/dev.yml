@@ -83,7 +83,7 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
       - name: Get 7-digit SHA from the release
         run: |
           echo "Commit SHA: ${GITHUB_SHA::7}"
@@ -100,19 +100,18 @@ jobs:
             echo "❌ Failed to pull Docker image kennyd3d/actions-demo:${SHA_SHORT}" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-          
+
       - name: Retag and push Docker Image with Release Name
-        run: | 
+        run: |
           echo "Retagging image tag to: ${{ github.event.release.name }}"
           echo "Artifact Name: ${{ env.ARTIFACT_NAME }}"
-          echo "Short SHA: ${{ env.SHORT_SHA }}"
+          echo "Short SHA: ${{ env.SHA_SHORT }}"
           echo "Tagging image..."
-          docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHORT_SHA }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
+          docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
           echo "Listing Docker images..."
           docker images
           echo "Pushing image..."
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
-    
 
       - name: Deploy to Stable k8
         run: |
