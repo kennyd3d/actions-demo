@@ -101,6 +101,8 @@ jobs:
           echo "Retagging image tag to: ${{ github.event.release.name }}"
           echo "Artifact Name: ${{ env.ARTIFACT_NAME }}"
           echo "Short SHA: ${{ env.SHA_SHORT }}"
+          echo "Listing Docker images..."
+          docker images
           echo "Tagging image..."
           docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
           echo "Listing Docker images..."
@@ -115,7 +117,12 @@ jobs:
       - name: Give possible failure hint
         if: failure()
         run: |
-          "❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔" >> $GITHUB_STEP_SUMMARY
+          "echo # ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔\n" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Run success message on successful deployment
+        if: success()
+        run: |
+          echo "# 🎊 Successfully deployed ${{ github.event.release.name }} to QA ✅" >> $GITHUB_STEP_SUMMARY
 
   # Manually deploy the release given the release name
   deploy_stable:
