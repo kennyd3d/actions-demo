@@ -123,12 +123,13 @@ jobs:
 
       - name: Check if release exists in remote repo
         run: |
-          echo "IMAGE_STABLE=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.inputs.RELEASE }}" >> $GITHUB_ENV
-          if ! docker manifest inspect ${{ env.IMAGE_STABLE }} > /dev/null 2>&1; then
-            echo '# ❌ Failed Stable Deployment: ${{ env.IMAGE_STABLE }} not found in artifactory' >> $GITHUB_STEP_SUMMARY
+          IMAGE_STABLE="kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.inputs.RELEASE }}"
+          echo "IMAGE_STABLE=$IMAGE_STABLE" >> $GITHUB_ENV
+          if ! docker manifest inspect $IMAGE_STABLE > /dev/null 2>&1; then
+            echo "❌ Failed Stable Deployment: $IMAGE_STABLE not found in artifactory" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-        
+      
       - name: Deploy release to stable
         run: |
           echo "Test to deploy to Stable k8 using image ${{ env.IMAGE_STABLE }}"
