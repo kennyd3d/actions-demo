@@ -33,7 +33,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Get Short SHA
+      - name: Get 7 digit SHA
         run: |
           echo "SHA_SHORT=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
 
@@ -61,12 +61,13 @@ jobs:
         run: |
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
           echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
-          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory" >> $GITHUB_STEP_SUMMARY
+          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory \n" >> $GITHUB_STEP_SUMMARY
 
       - name: Deploy to k8
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
           echo "Pretending to deploy to k8"
+          echo "## Dev Deployment was a Success ✅" >> $GITHUB_STEP_SUMMARY
 
   # Build test and deploy to qa namespace when a release tag is created
   build_test_and_deploy_qa:
@@ -136,15 +137,25 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Check if release is in artifactory
+      - name: Check if release exists in remote repo
         run: |
-          if docker manifest inspect ${{ github.event.release.name }} > /dev/null 2>&1; then
-            echo echo '# 🎊 Successfully Deployed to Stable' >> $GITHUB_STEP_SUMMARY
+          if docker manifest inspect kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }} > /dev/null 2>&1; then
+            echo '# 🎊 Successfully Deployed to Stable' >> $GITHUB_STEP_SUMMARY
           else
-            echo echo '# ❌ Failed Stable Deployment: Release not found in artifactory' >> $GITHUB_STEP_SUMMARY
+            echo '# ❌ Failed Stable Deployment: Release not found in artifactory' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
-
+        
       - name: Deploy to Stable k8
         run: |
           echo "Test to deploy to Stable k8 using image kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}"
+
+      - name: Give possible failure hint
+        if: failure()
+        run: |
+          echo "# ❌ Stable Failed to Deploy: Did you type the correct release name? 🤔\n" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Run success message on successful deployment
+        if: success()
+        run: |
+          echo "# 🎊 Successfully deployed ${{ github.event.release.name }} to Stable ✅" >> $GITHUB_STEP_SUMMARY
