@@ -61,13 +61,15 @@ jobs:
         run: |
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
           echo "Docker image pushed with tag ${{ env.SHA_SHORT }}"
-          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory \n" >> $GITHUB_STEP_SUMMARY
+          echo "# 🎊 Successfully pushed the tag ${{ env.SHA_SHORT }} to Artifactory\n" >> $GITHUB_STEP_SUMMARY
+          echo "## ⚠️ Check that you are using the tag ${{ env.SHA_SHORT }} when/if creating a new tag for QA deployment ⚠️\n" >> $GITHUB_STEP_SUMMARY
+    
 
       - name: Deploy to k8
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
           echo "Pretending to deploy to k8"
-          echo "## Dev Deployment was a Success ✅" >> $GITHUB_STEP_SUMMARY
+          echo "# Dev Deployment was a Success ✅" >> $GITHUB_STEP_SUMMARY
 
   # Build test and deploy to qa namespace when a release tag is created
   build_test_and_deploy_qa:
@@ -118,7 +120,7 @@ jobs:
       - name: Give possible failure hint
         if: failure()
         run: |
-          echo "# ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔\n" >> $GITHUB_STEP_SUMMARY
+          echo "# ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔" >> $GITHUB_STEP_SUMMARY
       
       - name: Run success message on successful deployment
         if: success()
@@ -139,10 +141,11 @@ jobs:
 
       - name: Check if release exists in remote repo
         run: |
-          if docker manifest inspect kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }} > /dev/null 2>&1; then
+          IMAGE=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
+          if docker manifest inspect $IMAGE > /dev/null 2>&1; then
             echo '# 🎊 Successfully Deployed to Stable' >> $GITHUB_STEP_SUMMARY
           else
-            echo '# ❌ Failed Stable Deployment: Release not found in artifactory' >> $GITHUB_STEP_SUMMARY
+            echo '# ❌ Failed Stable Deployment: $IMAGE not found in artifactory' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
         
@@ -153,7 +156,7 @@ jobs:
       - name: Give possible failure hint
         if: failure()
         run: |
-          echo "# ❌ Stable Failed to Deploy: Did you type the correct release name? 🤔\n" >> $GITHUB_STEP_SUMMARY
+          echo "## Stable Failed to Deploy: Did you type the correct release name? 🤔" >> $GITHUB_STEP_SUMMARY
       
       - name: Run success message on successful deployment
         if: success()
