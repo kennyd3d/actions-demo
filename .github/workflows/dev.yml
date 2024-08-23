@@ -103,7 +103,7 @@ jobs:
 
       - name: Retag and push Docker Image with Release Name
         run: | 
-          echo \"Retagging image tag to: ${{ github.event.release.name }}"
+          echo "Retagging image tag to: ${{ github.event.release.name }}"
           docker tag kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHORT_SHA }} kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}
           docker images
           docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name}}
