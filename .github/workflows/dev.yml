@@ -33,9 +33,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Get 7 digit SHA
+      - name: Preparing job
         run: |
           echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "IMAGE_DEV=kennyd3d/${{ env.ARTIFACT_NAME }}:$SHA_SHORT" >> $GITHUB_ENV
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -54,18 +55,18 @@ jobs:
           context: .
           push: false
           tags: |
-            kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}
+            ${{ env.IMAGE_DEV }}
 
       - name: Push Docker Image if merged
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
-          docker push kennyd3d/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}          
+          docker push ${{ env.IMAGE_DEV }}     
 
-      - name: Deploy to k8
+      - name: Deploy to Dev
         if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
         run: |
           echo "Pretending to deploy to k8"
-          echo "## Dev Deployment was a Success ✅" >> $GITHUB_STEP_SUMMARY
+          echo "## Successfully deployed ${{ env.IMAGE_DEV }} to Dev namespace ✅" >> $GITHUB_STEP_SUMMARY
 
   # Build test and deploy to qa namespace when a release tag is created
   build_test_and_deploy_qa:
@@ -82,7 +83,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Preparing for deployment
+      - name: Preparing job
         run: |
           echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
           echo "IMAGE_DEV=kennyd3d/${{ env.ARTIFACT_NAME }}:$SHA_SHORT" >> $GITHUB_ENV
@@ -125,7 +126,7 @@ jobs:
       - name: Check if release exists in remote repo
         run: |
           echo "IMAGE_STABLE=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.inputs.INPUT_TAG }}" >> $GITHUB_ENV
-          if ! docker manifest inspect kennyd3d/actions-demo:0.0.28-rc > /dev/null 2>&1; then
+          if ! docker manifest inspect ${{ env.IMAGE_STABLE }} > /dev/null 2>&1; then
             echo '# ❌ Failed Stable Deployment: ${{ env.IMAGE_STABLE }} not found in artifactory' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
