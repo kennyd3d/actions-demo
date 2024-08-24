@@ -17,6 +17,10 @@ on:
     branches:
       - dev
 
+  push:
+    tags:
+      - "*"
+
   release:
     types: [created]
 
@@ -60,7 +64,7 @@ jobs:
 
           echo "DEV: ${{ env.IMAGE_DEV }}"
           echo "QA: ${{ env.IMAGE_QA }}"
-          
+
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
     if: |
