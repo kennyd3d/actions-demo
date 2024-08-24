@@ -30,12 +30,12 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Preparing job
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
 
