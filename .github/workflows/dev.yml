@@ -24,6 +24,43 @@ env:
   ARTIFACT_NAME: actions-demo
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Preparing job
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+
+          # Validate and sanitize the tag name
+          if [[ ! "$TAG_NAME" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
+            echo "# ❌ Invalid tag name: $TAG_NAME. Tag names must be lowercase and can include dashes, dots, or underscores."  >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          # Ensure tag name is a valid Docker tag
+          if [ ${#TAG_NAME} -gt 128 ]; then
+            echo "# ❌ Tag name is too long. Must be less than 128 characters.">> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          TAG_COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "TAG_COMMIT_SHA=$TAG_COMMIT_SHA" >> $GITHUB_ENV
+          echo "SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)" >> $GITHUB_ENV
+
+          echo "Tag Name: ${{ env.TAG_NAME }}"
+          echo "Full SHA: ${{ env.TAG_COMMIT_SHA }}"
+          echo "Short SHA: ${{ env.SHA_SHORT }}
+
+          echo "IMAGE_DEV=docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:${{ env.SHA_SHORT }}" >> $GITHUB_ENV
+          echo "IMAGE_QA=docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:${{ env.TAG_NAME }}" >> $GITHUB_ENV
+
+          echo "DEV: ${{ env.IMAGE_DEV }}"
+          echo "QA: ${{ env.IMAGE_QA }}"
+          
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
     if: |
