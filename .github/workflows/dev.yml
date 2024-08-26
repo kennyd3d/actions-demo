@@ -57,8 +57,8 @@ jobs:
           echo "SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)" >> $GITHUB_ENV
       
            # Print values directly using shell variables
-          IMAGE_DEV="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$SHA_SHORT"
-          IMAGE_QA="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$TAG_NAME"
+          IMAGE_DEV="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$SHA_SHORT" >> $GITHUB_ENV
+          IMAGE_QA="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$TAG_NAME" >> $GITHUB_ENV
 
           echo "Tag Name: $TAG_NAME"
           echo "Full SHA: $TAG_COMMIT_SHA"
