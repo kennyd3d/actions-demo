@@ -52,20 +52,20 @@ jobs:
           fi
       
           TAG_COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
+          SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)
+          
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           echo "TAG_COMMIT_SHA=$TAG_COMMIT_SHA" >> $GITHUB_ENV
-          echo "SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)" >> $GITHUB_ENV
+          echo "SHA_SHORT=$SHA_SHORT" >> $GITHUB_ENV
       
-           # Print values directly using shell variables
-          IMAGE_DEV="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$SHA_SHORT" >> $GITHUB_ENV
-          IMAGE_QA="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$TAG_NAME" >> $GITHUB_ENV
+          IMAGE_DEV="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$SHA_SHORT"
+          IMAGE_QA="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$TAG_NAME"
 
           echo "Tag Name: $TAG_NAME"
           echo "Full SHA: $TAG_COMMIT_SHA"
           echo "Short SHA: $SHA_SHORT"
           echo "DEV: $IMAGE_DEV"
           echo "QA: $IMAGE_QA"
-      
 
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
