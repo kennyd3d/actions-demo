@@ -5,7 +5,7 @@ on:
       RELEASE:
         required: false
         type: string
-        description: "The name of the release you want to deploy to stable."
+        description: "The name of the release you want to deploy to stable"
 
 
   pull_request:
