@@ -8,12 +8,7 @@ on:
         description: "The name of the release you want to deploy to stable."
 
   pull_request:
-    types: [opened, reopened, synchronize]
-    branches:
-      - dev
-
-  pull_request_target:
-    types: [closed]
+    types: [opened, reopened, synchronize, closed]
     branches:
       - dev
 
@@ -169,7 +164,7 @@ jobs:
           IMAGE_STABLE="kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.inputs.RELEASE }}"
           echo "IMAGE_STABLE=$IMAGE_STABLE" >> $GITHUB_ENV
           if ! docker manifest inspect $IMAGE_STABLE > /dev/null 2>&1; then
-            echo "❌ Failed Stable Deployment: $IMAGE_STABLE not found in artifactory" >> $GITHUB_STEP_SUMMARY
+            echo "# ❌ Failed Stable Deployment: $IMAGE_STABLE not found in artifactory" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
       
