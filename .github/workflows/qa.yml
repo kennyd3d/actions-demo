@@ -29,8 +29,8 @@ jobs:
           echo "SHA_SHORT=$SHA_SHORT" >> $GITHUB_ENV
           echo "Short SHA: $SHA_SHORT"
 
-          IMAGE_DEV="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$SHA_SHORT"
-          IMAGE_QA="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:${{ github.event.release.tag_name }}"
+          IMAGE_DEV="kennyd3d/${{ env.ARTIFACT_NAME }}:$SHA_SHORT"
+          IMAGE_QA="kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.tag_name }}"
 
           echo "IMAGE_DEV=$IMAGE_DEV" >> $GITHUB_ENV
           echo "IMAGE_QA=$IMAGE_QA" >> $GITHUB_ENV
