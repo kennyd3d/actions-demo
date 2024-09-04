@@ -51,7 +51,7 @@ jobs:
           context: .
           tags: |
             ${{ env.IMAGE_DEV }}
-            kennyd3d//${{ env.ARTIFACT_NAME }}:dev
+            kennyd3d/${{ env.ARTIFACT_NAME }}:dev
 
       - name: Push Docker Image if merged
         if: env.PUSHED_DEV
