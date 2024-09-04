@@ -18,8 +18,6 @@ env:
 jobs:
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
-    env:
-      PUSHED_DEV: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -54,12 +52,12 @@ jobs:
             kennyd3d/${{ env.ARTIFACT_NAME }}:dev
 
       - name: Push Docker Image if merged
-        if: env.PUSHED_DEV
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
         run: |
           docker push ${{ env.IMAGE_DEV }}     
 
       - name: Deploy to Dev
-        if: env.PUSHED_DEV
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
         run: |
           echo "Pretending to deploy to k8"
           echo "## Successfully deployed ${{ env.IMAGE_DEV }} to Dev ✅" >> $GITHUB_STEP_SUMMARY
