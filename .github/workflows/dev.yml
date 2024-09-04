@@ -1,82 +1,38 @@
-name: Build and Deploy for Dev, QA, and Stable
+# To understand how this workflow works see:
+# (Diagram) https://github.com/user-attachments/assets/ab1ac4ab-09ec-4315-a33f-c2acb4a58e9d
+
+name: Build, Test, & Deploy for Dev
 on:
-  workflow_dispatch:
-    inputs:
-      RELEASE:
-        required: false
-        type: string
-        description: "The name of the release you want to deploy to stable"
-
-
   pull_request:
-    types: [opened, reopened, synchronize, closed]
+    types: [opened, reopened, synchronize]
     branches:
       - dev
-
+  
   push:
     branches:
       - dev
-    tags:
-      - "*"
-
-  release:
-    types: [created]
 
 env:
   ARTIFACT_NAME: actions-demo
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Preparing job
-        run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-      
-          # Validate and sanitize the tag name
-          if [[ ! "$TAG_NAME" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
-            echo "# ❌ Invalid tag name: $TAG_NAME. Tag names must be lowercase and can include dashes, dots, or underscores." >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-      
-          # Ensure tag name is a valid Docker tag
-          if [ ${#TAG_NAME} -gt 128 ]; then
-            echo "# ❌ Tag name is too long. Must be less than 128 characters." >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-      
-          TAG_COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
-          SHA_SHORT=$(echo $TAG_COMMIT_SHA | cut -c1-7)
-          
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
-          echo "TAG_COMMIT_SHA=$TAG_COMMIT_SHA" >> $GITHUB_ENV
-          echo "SHA_SHORT=$SHA_SHORT" >> $GITHUB_ENV
-      
-          IMAGE_DEV="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$SHA_SHORT"
-          IMAGE_QA="docker.artifactory.d3d.io/${{ env.ARTIFACT_NAME }}:$TAG_NAME"
-
-          echo "Tag Name: $TAG_NAME"
-          echo "Full SHA: $TAG_COMMIT_SHA"
-          echo "Short SHA: $SHA_SHORT"
-          echo "DEV: $IMAGE_DEV"
-          echo "QA: $IMAGE_QA"
-
   build_test_and_deploy_dev:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request' && github.base_ref == 'dev' ||
-      (github.event_name == 'pull_request_target' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev')
+    env:
+      PUSHED_DEV: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Preparing job
         run: |
-          echo "IMAGE_DEV=kennyd3d/${{ env.ARTIFACT_NAME }}:${GITHUB_SHA::7}" >> $GITHUB_ENV
+          SHA_SHORT=$(echo $GITHUB_SHA | cut -c1-7)
+          echo "SHA_SHORT=$SHA_SHORT" >> $GITHUB_ENV
+          echo "Short SHA: $SHA_SHORT"
+
+          IMAGE_DEV="kennyd3d/${{ env.ARTIFACT_NAME }}:$SHA_SHORT"
+          echo "IMAGE_DEV=$IMAGE_DEV" >> $GITHUB_ENV
+          echo "DEV: $IMAGE_DEV"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -93,94 +49,22 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
           tags: |
             ${{ env.IMAGE_DEV }}
+            kennyd3d/${{ env.ARTIFACT_NAME }}:dev
 
       - name: Push Docker Image if merged
-        if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
+        if: env.PUSHED_DEV
         run: |
           docker push ${{ env.IMAGE_DEV }}     
 
       - name: Deploy to Dev
-        if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev' }}
+        if: env.PUSHED_DEV
         run: |
           echo "Pretending to deploy to k8"
           echo "## Successfully deployed ${{ env.IMAGE_DEV }} to Dev ✅" >> $GITHUB_STEP_SUMMARY
 
-  # Build test and deploy to qa when a release tag is created
-  build_test_and_deploy_qa:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'created'
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Preparing job
+      - name: Run success message on successful deployment if pushed to dev
+        if: ${{ github.event_name == 'push' && success() }}
         run: |
-          echo "IMAGE_DEV=kennyd3d/${{ env.ARTIFACT_NAME }}:${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "IMAGE_QA=kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.release.name }}" >> $GITHUB_ENV
-
-      - name: Retag and push Docker Image with Release Name
-        run: |
-          docker pull ${{ env.IMAGE_DEV }}
-          docker tag ${{ env.IMAGE_DEV }} ${{ env.IMAGE_QA }}
-          docker push ${{ env.IMAGE_QA }}
-
-      - name: Deploy to Stable k8
-        run: |
-          echo "Test to deploy to Stable k8 using image ${{ env.IMAGE_QA }}"
-
-      - name: Give possible failure hint
-        if: failure()
-        run: |
-          echo "# ❌ QA Failed to Deploy: Did you make sure you tagged the same commit that merged to Dev? 🤔" >> $GITHUB_STEP_SUMMARY
-          echo "## DEV deployment: ${{ env.IMAGE_DEV }}" >> $GITHUB_STEP_SUMMARY
-          echo "## QA Deployment: ${{ env.IMAGE_QA }}" >> $GITHUB_STEP_SUMMARY
-      
-      - name: Run success message on successful deployment
-        if: success()
-        run: |
-          echo "# 🎊 Successfully deployed ${{ env.IMAGE_QA }} to QA ✅" >> $GITHUB_STEP_SUMMARY
-
-  # Manually deploy the release given the release name
-  deploy_stable:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Check if release exists in remote repo
-        run: |
-          IMAGE_STABLE="kennyd3d/${{ env.ARTIFACT_NAME }}:${{ github.event.inputs.RELEASE }}"
-          echo "IMAGE_STABLE=$IMAGE_STABLE" >> $GITHUB_ENV
-          if ! docker manifest inspect $IMAGE_STABLE > /dev/null 2>&1; then
-            echo "# ❌ Failed Stable Deployment: $IMAGE_STABLE not found in artifactory" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-      
-      - name: Deploy release to stable
-        run: |
-          echo "Test to deploy to Stable k8 using image ${{ env.IMAGE_STABLE }}"
-
-      - name: Give possible failure hint
-        if: failure()
-        run: |
-          echo "## Stable Failed to Deploy ${{ env.IMAGE_STABLE }}: Did you type the correct release name? 🤔" >> $GITHUB_STEP_SUMMARY
-      
-      - name: Run success message on successful deployment
-        if: success()
-        run: |
-          echo "# 🎊 Successfully deployed ${{ env.IMAGE_STABLE }} to Stable ✅" >> $GITHUB_STEP_SUMMARY
+          echo "# 🎊 Successfully deployed ${{ env.IMAGE_DEV }} to Dev ✅" >> $GITHUB_STEP_SUMMARY
